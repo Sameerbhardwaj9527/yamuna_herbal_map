@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hedychium Farmers Map – Aatmanirbhar Society</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.min.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Hindi&family=DM+Sans:wght@300;400;500;600&display=swap');
+    :root {
+      --forest: #1a3a2a; --leaf: #2d6a4f; --moss: #52b788;
+      --sap: #95d5b2; --cream: #f8f3e3; --gold: #d4a017;
+      --red: #dc2626; --shadow: rgba(26,58,42,0.18);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--forest); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+    header { background: var(--forest); color: var(--cream); padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-shrink: 0; z-index: 1000; }
+    .header-left { display: flex; align-items: center; gap: 14px; }
+    .logo-circle { width: 44px; height: 44px; border-radius: 50%; background: var(--moss); display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+    .header-title h1 { font-family: 'Tiro Devanagari Hindi', serif; font-size: 1.1rem; font-weight: 400; color: var(--sap); }
+    .header-title p { font-size: 0.72rem; color: var(--sap); opacity: 0.7; margin-top: 1px; }
+    .header-stats { display: flex; gap: 14px; }
+    .stat-chip { text-align: center; background: rgba(255,255,255,0.08); border: 1px solid rgba(149,213,178,0.25); border-radius: 8px; padding: 5px 14px; }
+    .stat-chip .num { font-size: 1.2rem; font-weight: 600; color: var(--gold); display: block; }
+    .stat-chip .lbl { font-size: 0.63rem; opacity: 0.65; text-transform: uppercase; letter-spacing: 0.06em; }
+
+    .controls { background: white; border-bottom: 1px solid rgba(45,106,79,0.15); padding: 8px 16px; display: flex; align-items: center; gap: 10px; flex-shrink: 0; flex-wrap: wrap; }
+    .controls label { font-size: 0.78rem; color: var(--leaf); font-weight: 500; }
+    .controls select, .controls input[type="text"] { border: 1px solid var(--sap); border-radius: 6px; padding: 5px 10px; font-size: 0.8rem; font-family: inherit; color: var(--forest); background: var(--cream); outline: none; }
+    .controls select:focus, .controls input:focus { border-color: var(--moss); }
+    .btn { border: none; border-radius: 6px; padding: 6px 14px; font-size: 0.78rem; font-family: inherit; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: background 0.2s; }
+    .btn-refresh { background: var(--leaf); color: white; margin-left: auto; }
+    .btn-refresh:hover { background: var(--forest); }
+    .btn-refresh:disabled { opacity: 0.5; cursor: not-allowed; }
+    .count-badge { background: var(--forest); color: white; border-radius: 20px; padding: 4px 12px; font-size: 0.75rem; font-weight: 500; }
+    .sync-status { font-size: 0.72rem; color: #666; display: flex; align-items: center; gap: 5px; }
+    .sync-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .sync-dot.ok   { background: #22c55e; }
+    .sync-dot.err  { background: var(--red); }
+    .sync-dot.spin { background: var(--gold); animation: pulse 1s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    #map { flex: 1; z-index: 1; }
+
+    /* Loading overlay */
+    #overlay { position: fixed; inset: 0; background: var(--cream); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; transition: opacity 0.3s; }
+    #overlay.hidden { opacity: 0; pointer-events: none; }
+    .spinner { width: 40px; height: 40px; border: 4px solid var(--sap); border-top-color: var(--leaf); border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .overlay-text { color: var(--leaf); font-size: 0.9rem; font-weight: 500; }
+    .overlay-sub  { color: #888; font-size: 0.78rem; }
+
+    /* Error modal */
+    #err-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 8000; align-items: center; justify-content: center; }
+    #err-modal.show { display: flex; }
+    .err-box { background: white; border-radius: 12px; padding: 24px 28px; max-width: 420px; width: 90%; box-shadow: 0 8px 40px rgba(0,0,0,0.2); }
+    .err-box h3 { color: var(--red); margin-bottom: 8px; font-size: 1rem; }
+    .err-box p { font-size: 0.82rem; color: #444; line-height: 1.6; }
+    .err-box code { background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-size: 0.78rem; word-break: break-all; }
+    .err-box .steps { margin: 12px 0 0; padding-left: 18px; font-size: 0.8rem; color: #555; line-height: 1.8; }
+    .err-actions { display: flex; gap: 10px; margin-top: 16px; }
+    .btn-close { background: #e5e7eb; color: #333; }
+    .btn-close:hover { background: #d1d5db; }
+
+    /* Popup */
+    .leaflet-popup-content-wrapper { border-radius: 10px !important; box-shadow: 0 4px 20px var(--shadow) !important; border: 1px solid var(--sap) !important; padding: 0 !important; }
+    .leaflet-popup-content { margin: 0 !important; width: 235px !important; }
+    .popup-header { background: var(--forest); color: var(--cream); padding: 10px 14px 8px; border-radius: 9px 9px 0 0; }
+    .popup-name { font-weight: 600; font-size: 0.9rem; }
+    .popup-sub  { font-size: 0.7rem; opacity: 0.7; margin-top: 2px; }
+    .popup-body { padding: 10px 14px 12px; }
+    .popup-row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 0.78rem; border-bottom: 1px dashed rgba(45,106,79,0.1); }
+    .popup-row:last-child { border-bottom: none; }
+    .popup-row .key { color: #666; }
+    .popup-row .val { font-weight: 500; color: var(--leaf); }
+
+    .map-legend { position: absolute; bottom: 28px; left: 12px; z-index: 500; background: white; border-radius: 8px; box-shadow: 0 2px 12px var(--shadow); padding: 10px 14px; border: 1px solid var(--sap); font-size: 0.75rem; pointer-events: none; }
+    .map-legend h4 { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--leaf); margin-bottom: 6px; }
+    .legend-row { display: flex; align-items: center; gap: 8px; margin: 3px 0; }
+    .legend-dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 0 1px rgba(0,0,0,0.2); flex-shrink: 0; }
+  </style>
+</head>
+<body>
+
+<!-- Loading overlay -->
+<div id="overlay">
+  <div style="font-size:38px">🌿</div>
+  <div class="spinner"></div>
+  <div class="overlay-text">Loading farmer data…</div>
+  <div class="overlay-sub" id="overlay-sub">Connecting to Google Sheet</div>
+</div>
+
+<!-- Error modal -->
+<div id="err-modal">
+  <div class="err-box">
+    <h3>⚠ Could not load Google Sheet</h3>
+    <p id="err-msg"></p>
+    <div class="err-actions">
+      <button class="btn btn-refresh" onclick="closeErr(); loadSheet();">↺ Retry</button>
+      <button class="btn btn-close" onclick="closeErr()">Dismiss</button>
+    </div>
+  </div>
+</div>
+
+<header>
+  <div class="header-left">
+    <div class="logo-circle">🌱</div>
+    <div class="header-title">
+      <h1>Hedychium Farmer Map</h1>
+      <p>Aatmanirbhar Society · Uttarakhand · 2026</p>
+    </div>
+  </div>
+  <div class="header-stats">
+    <div class="stat-chip"><span class="num" id="stat-f">–</span><span class="lbl">Farmers</span></div>
+    <div class="stat-chip"><span class="num" id="stat-n">–</span><span class="lbl">Nali</span></div>
+    <div class="stat-chip"><span class="num" id="stat-k">–</span><span class="lbl">Kg Planted</span></div>
+  </div>
+</header>
+
+<div class="controls">
+  <label>Village:</label>
+  <select id="filter-village"><option value="">All Villages</option></select>
+
+  <label>Search:</label>
+  <input type="text" id="search" placeholder="Farmer name…" style="width:170px" />
+
+  <span class="sync-status">
+    <span class="sync-dot spin" id="sync-dot"></span>
+    <span id="sync-txt">Loading…</span>
+  </span>
+
+  <span class="count-badge" id="count-badge" style="display:none"></span>
+
+  <button class="btn btn-refresh" id="btn-refresh" onclick="loadSheet()" title="Pull latest data from Google Sheet">
+    ↺ Refresh
+  </button>
+</div>
+
+<div id="map"></div>
+
+<div class="map-legend">
+  <h4>Village</h4>
+  <div class="legend-row"><div class="legend-dot" style="background:#2d6a4f"></div><span id="leg1">Bariya</span></div>
+  <div class="legend-row"><div class="legend-dot" style="background:#d4a017"></div><span id="leg2">Dangurgoan</span></div>
+  <div class="legend-row"><div class="legend-dot" style="background:#7c3aed"></div><span>Other village</span></div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+//  CONFIG  — only these lines need changing
+// ══════════════════════════════════════════════════════════════
+const CONFIG = {
+  // Your Sheet ID (the part between /d/ and /edit in the URL)
+  SHEET_ID: '12t0_QTeoXZWpY9oc8SH8AzAYMbrLeiZ94r5Mt07sBgQ',
+
+  // Sheet tab names to load (add more tab names here for more sheets)
+  SHEET_TABS: ['Sheet1', 'Sheet2'],
+
+  // Row number where the real column headers are (usually 2 because row 1 is the title)
+  HEADER_ROW: 2,
+
+  // Village GPS centers — used for farmers without a GPS coordinate
+  // Key = village name in lowercase, value = [lat, lng]
+  VILLAGE_GPS: {
+    'bariya':     [30.926803, 78.390542],
+    'dangurgoan': [30.922174, 78.391418],
+    'dangurgaon': [30.922174, 78.391418],
+  },
+
+  // Pin colors per village (lowercase village name → hex color)
+  VILLAGE_COLORS: {
+    'bariya':     '#2d6a4f',
+    'dangurgoan': '#d4a017',
+    'dangurgaon': '#d4a017',
+  },
+
+  DEFAULT_COLOR: '#7c3aed',   // color for any unknown village
+  JITTER_RADIUS: 0.0018,      // spread of pins around village center (degrees)
+};
+// ══════════════════════════════════════════════════════════════
+
+// ── Map setup ────────────────────────────────────────────────
+const map = L.map('map', { center: [30.924, 78.391], zoom: 14 });
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+  maxZoom: 19,
+}).addTo(map);
+
+const cluster = L.markerClusterGroup({ disableClusteringAtZoom: 16 });
+map.addLayer(cluster);
+
+// ── State ────────────────────────────────────────────────────
+let ALL_FARMERS = [];
+
+// ── Helpers ──────────────────────────────────────────────────
+function jitter(lat, lng, r) {
+  const d = r * Math.sqrt(Math.random());
+  const a = Math.random() * 2 * Math.PI;
+  return [+(lat + d * Math.cos(a)).toFixed(6), +(lng + d * Math.sin(a)).toFixed(6)];
+}
+
+function makeIcon(color) {
+  return L.divIcon({
+    className: '',
+    html: `<div style="width:26px;height:26px;background:${color};border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.35);"></div>`,
+    iconSize: [26, 26], iconAnchor: [13, 26], popupAnchor: [0, -28],
+  });
+}
+
+function popupHTML(f) {
+  const rows = [
+    ['Husband/Father', f.husband],
+    ['Post Office',    f.post],
+    ['Tehsil',         f.tehsil],
+    ['District',       f.district],
+    ['Area (nali)',    f.area],
+    ['Planting (kg)',  f.kg ? f.kg + ' kg' : '–'],
+    ['Cropping',       f.system || 'Monocropping'],
+    ['GPS Source',     f.hasGPS ? '📍 Exact GPS' : '📌 Village centre'],
+  ].map(([k,v]) => `<div class="popup-row"><span class="key">${k}</span><span class="val">${v||'–'}</span></div>`).join('');
+  return `
+    <div class="popup-header">
+      <div class="popup-name">🌿 ${f.name}</div>
+      <div class="popup-sub">${f.village} · S.No ${f.no} · ${f.sheet}</div>
+    </div>
+    <div class="popup-body">${rows}</div>`;
+}
+
+// ── CSV fetch from Google Sheets ─────────────────────────────
+async function fetchTab(tabName) {
+  const url = `https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tabName)}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status} for tab "${tabName}"`);
+  return res.text();
+}
+
+function parseTab(csv, tabName) {
+  // Split into lines, handle quoted commas
+  const lines = csv.trim().split('\n');
+  if (lines.length < 2) return [];
+
+  // Find header row — look for "Farmers Name"
+  let hi = 0;
+  for (let i = 0; i < Math.min(lines.length, 5); i++) {
+    if (lines[i].toLowerCase().includes('farmers name')) { hi = i; break; }
+  }
+
+  const splitCSV = line => {
+    const out = []; let cur = ''; let inQ = false;
+    for (const c of line) {
+      if (c === '"') { inQ = !inQ; }
+      else if (c === ',' && !inQ) { out.push(cur.trim()); cur = ''; }
+      else cur += c;
+    }
+    out.push(cur.trim());
+    return out.map(v => v.replace(/^"|"$/g, '').trim());
+  };
+
+  const headers = splitCSV(lines[hi]).map(h => h.toLowerCase());
+
+  const col = (row, ...keywords) => {
+    for (const kw of keywords) {
+      const i = headers.findIndex(h => h.includes(kw));
+      if (i >= 0) return (row[i] || '').trim();
+    }
+    return '';
+  };
+
+  const farmers = [];
+  for (let i = hi + 1; i < lines.length; i++) {
+    const row = splitCSV(lines[i]);
+    const name = col(row, 'farmers name', 'farmer name');
+    const sno  = col(row, 's/no', 'sno', 's.no');
+
+    // Skip empty rows, header repeats, and total rows
+    if (!name || name.toLowerCase().includes('farmers name')) continue;
+    if (!sno  || isNaN(parseInt(sno))) continue;
+
+    // GPS coordinate parsing
+    const gpsRaw = col(row, 'gps');
+    let lat = null, lng = null, hasGPS = false;
+
+    if (gpsRaw && gpsRaw !== 'nan' && gpsRaw !== '') {
+      const nums = gpsRaw.replace(/[°NnEe]/g, '').split(/[\s,]+/).map(Number).filter(n => !isNaN(n) && n !== 0);
+      if (nums.length >= 2) { lat = nums[0]; lng = nums[1]; hasGPS = true; }
+    }
+
+    // Fallback to village centroid
+    const village = col(row, 'village').toLowerCase().replace(/\s+/g, '');
+    if (!hasGPS) {
+      const base = CONFIG.VILLAGE_GPS[village] || CONFIG.VILLAGE_GPS[village.replace(/oa/, 'a')];
+      if (base) {
+        [lat, lng] = jitter(base[0], base[1], CONFIG.JITTER_RADIUS);
+      }
+    }
+
+    if (!lat || !lng) continue;   // skip if no location at all
+
+    farmers.push({
+      no:      parseInt(sno),
+      name,
+      husband: col(row, 'husband'),
+      village: col(row, 'village'),
+      post:    col(row, 'post'),
+      tehsil:  col(row, 'tehsil'),
+      district:col(row, 'district'),
+      pincode: col(row, 'pin'),
+      area:    parseFloat(col(row, 'nali', 'area')) || 0,
+      kg:      parseFloat(col(row, 'kg', 'planting')) || 0,
+      system:  col(row, 'cropping', 'system'),
+      lat, lng, hasGPS,
+      sheet: tabName,
+    });
+  }
+  return farmers;
+}
+
+// ── Load all tabs ────────────────────────────────────────────
+async function loadSheet() {
+  setSyncState('spin', 'Loading…');
+  setRefreshBtn(true);
+  showOverlay(true, 'Connecting to Google Sheet…');
+
+  try {
+    const allFarmers = [];
+    for (const tab of CONFIG.SHEET_TABS) {
+      showOverlay(true, `Reading tab: ${tab}`);
+      const csv     = await fetchTab(tab);
+      const farmers = parseTab(csv, tab);
+      allFarmers.push(...farmers);
+    }
+
+    ALL_FARMERS = allFarmers;
+    populateVillageFilter(ALL_FARMERS);
+    renderMap(ALL_FARMERS);
+    setSyncState('ok', `Synced · ${new Date().toLocaleTimeString()}`);
+
+  } catch (err) {
+    console.error(err);
+    setSyncState('err', 'Sheet error');
+    showErr(`
+      <strong>Could not read Google Sheet.</strong><br><br>
+      Make sure:<br>
+      <ol class="steps">
+        <li>Sheet is set to <strong>"Anyone with the link → Viewer"</strong></li>
+        <li>Tab names match: <code>${CONFIG.SHEET_TABS.join(', ')}</code></li>
+        <li>Sheet ID is correct: <code>${CONFIG.SHEET_ID}</code></li>
+      </ol>
+      <br>Raw error: <code>${err.message}</code>
+    `);
+    // If we already had data, keep showing it
+    if (ALL_FARMERS.length === 0) {
+      setSyncState('err', 'No data loaded');
+    }
+  } finally {
+    showOverlay(false);
+    setRefreshBtn(false);
+  }
+}
+
+// ── Render ───────────────────────────────────────────────────
+function renderMap(farmers) {
+  cluster.clearLayers();
+  farmers.forEach(f => {
+    const vKey  = (f.village || '').toLowerCase().replace(/\s+/g, '');
+    const color = CONFIG.VILLAGE_COLORS[vKey] || CONFIG.DEFAULT_COLOR;
+    cluster.addLayer(
+      L.marker([f.lat, f.lng], { icon: makeIcon(color) })
+        .bindPopup(popupHTML(f), { maxWidth: 260 })
+    );
+  });
+
+  document.getElementById('count-badge').style.display = 'inline-block';
+  document.getElementById('count-badge').textContent = farmers.length + ' shown';
+
+  const nali = farmers.reduce((s, f) => s + f.area, 0);
+  const kg   = farmers.reduce((s, f) => s + f.kg,   0);
+  document.getElementById('stat-f').textContent = farmers.length;
+  document.getElementById('stat-n').textContent = nali  || '–';
+  document.getElementById('stat-k').textContent = kg    || '–';
+
+  if (farmers.length > 0) {
+    const bounds = L.latLngBounds(farmers.map(f => [f.lat, f.lng]));
+    map.fitBounds(bounds.pad(0.15));
+  }
+}
+
+// ── Filters ──────────────────────────────────────────────────
+function populateVillageFilter(farmers) {
+  const sel      = document.getElementById('filter-village');
+  const villages = [...new Set(farmers.map(f => f.village.trim()).filter(Boolean))].sort();
+  sel.innerHTML  = '<option value="">All Villages</option>';
+  villages.forEach(v => {
+    const o = document.createElement('option');
+    o.value = v; o.textContent = v + ` (${farmers.filter(f => f.village.trim() === v).length})`;
+    sel.appendChild(o);
+  });
+}
+
+function applyFilters() {
+  const village = document.getElementById('filter-village').value.trim().toLowerCase();
+  const search  = document.getElementById('search').value.toLowerCase().trim();
+  const filtered = ALL_FARMERS.filter(f => {
+    const mv = !village || f.village.trim().toLowerCase() === village;
+    const ms = !search  || f.name.toLowerCase().includes(search);
+    return mv && ms;
+  });
+  renderMap(filtered);
+}
+
+document.getElementById('filter-village').addEventListener('change', applyFilters);
+document.getElementById('search').addEventListener('input', applyFilters);
+
+// ── UI helpers ───────────────────────────────────────────────
+function showOverlay(v, msg) {
+  document.getElementById('overlay').classList.toggle('hidden', !v);
+  if (msg) document.getElementById('overlay-sub').textContent = msg;
+}
+function setRefreshBtn(loading) {
+  const b = document.getElementById('btn-refresh');
+  b.disabled = loading;
+  b.textContent = loading ? '…' : '↺ Refresh';
+}
+function setSyncState(state, txt) {
+  const d = document.getElementById('sync-dot');
+  d.className = 'sync-dot ' + state;
+  document.getElementById('sync-txt').textContent = txt;
+}
+function showErr(html) {
+  document.getElementById('err-msg').innerHTML = html;
+  document.getElementById('err-modal').classList.add('show');
+}
+function closeErr() {
+  document.getElementById('err-modal').classList.remove('show');
+}
+
+// ── Boot ─────────────────────────────────────────────────────
+loadSheet();
+</script>
+</body>
+</html>
