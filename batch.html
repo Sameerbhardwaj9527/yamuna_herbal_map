@@ -384,10 +384,10 @@ function renderBatch(batch, farmers) {
 
   // GPS — not a column yet, use village centroid lookup
   const VILLAGE_GPS = {
-    'tunalaka':   [30.926, 78.390],
-    'kanseru':    [30.924, 78.392],
-    'kotiyalgaon':[30.922, 78.391],
-    'marod':      [30.918, 78.385],
+    'tunalaka':   [30.797183, 78.159811],
+    'kanseru':    [30.808347, 78.192733],
+    'kotiyalgaon':[30.848853, 78.138967],
+    'marod':      [30.614944, 78.012564],
   };
   const villageKey = (village || '').toLowerCase().split(',')[0].trim().replace(/\s+/g,'');
   const gpsArr = VILLAGE_GPS[villageKey] || null;
