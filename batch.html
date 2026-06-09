@@ -287,11 +287,8 @@
 //  CONFIG
 // ══════════════════════════════════════════════
 const SHEET_ID   = '12t0_QTeoXZWpY9oc8SH8AzAYMbrLeiZ94r5Mt07sBgQ';
-const BATCH_TAB  = 'Batches';   // ← your new tab name
-const FARMER_TAB = 'Sheet1';    // ← farmer details tab
-
-// Column names in your Batches tab (must match exactly, case-insensitive)
-// Expected: BatchID | Product | FarmerName | Village | HarvestDate | GPS | Notes
+const BATCH_TAB  = 'Buransh Availability';   // ← exact tab name
+const FARMER_TAB = 'Sheet1';                 // ← farmer details tab
 // ══════════════════════════════════════════════
 
 function csvUrl(tab) {
@@ -373,23 +370,35 @@ function renderMap(gps) {
 }
 
 function renderBatch(batch, farmers) {
-  const gps      = parseGPS(col(batch, 'GPS', 'gps'));
-  const batchId  = col(batch, 'BatchID', 'batchid', 'batch_id', 'id');
-  const product  = col(batch, 'Product', 'product');
-  const village  = col(batch, 'Village', 'village');
-  const harvest  = col(batch, 'HarvestDate', 'harvestdate', 'harvest_date', 'date');
-  const notes    = col(batch, 'Notes', 'notes', 'qty', 'quantity');
-  const weight   = col(batch, 'Weight', 'weight', 'kg') || notes;
+  // ── Map your exact column names ──
+  const batchId    = col(batch, 'BATCHID', 'batchid');
+  const village    = col(batch, 'Village Name', 'villagename', 'village');
+  const ownerName  = col(batch, 'Name of the Owner', 'nameoftheowner', 'owner');
+  const harvest    = col(batch, 'Harvest Season (Month-wise)', 'harvestseason', 'harvest');
+  const postOffice = col(batch, 'Post office', 'postoffice', 'post');
+  const tehsil     = col(batch, 'Tehsil', 'tehsil');
+  const district   = col(batch, 'District', 'district');
+  const state      = col(batch, 'State', 'state');
+  const pincode    = col(batch, 'Pin code', 'pincode');
+  const product    = 'Buransh Squash';   // fixed product for this sheet
 
-  // Find matching farmers (same village or explicit farmer name)
-  const farmerName = col(batch, 'FarmerName', 'farmername', 'farmer');
+  // GPS — not a column yet, use village centroid lookup
+  const VILLAGE_GPS = {
+    'tunalaka':   [30.926, 78.390],
+    'kanseru':    [30.924, 78.392],
+    'kotiyalgaon':[30.922, 78.391],
+    'marod':      [30.918, 78.385],
+  };
+  const villageKey = (village || '').toLowerCase().split(',')[0].trim().replace(/\s+/g,'');
+  const gpsArr = VILLAGE_GPS[villageKey] || null;
+  const gps = gpsArr ? { lat: gpsArr[0], lng: gpsArr[1] } : null;
+
+  // Find matching farmers from Sheet1 by village name match
   const matchedFarmers = farmers.filter(f => {
-    const fName    = col(f, 'Farmers Name', 'farmersname', 'farmername', 'name');
     const fVillage = col(f, 'Village', 'village');
-    if (farmerName && fName.toLowerCase().includes(farmerName.toLowerCase())) return true;
-    if (!farmerName && village && fVillage.toLowerCase() === village.toLowerCase()) return true;
-    return false;
-  }).slice(0, 6);  // max 6 farmers shown
+    const villageShort = (village || '').split(',')[0].trim().toLowerCase();
+    return fVillage && fVillage.toLowerCase().includes(villageShort);
+  }).slice(0, 6);
 
   const farmerCards = matchedFarmers.map(f => {
     const name    = col(f, 'Farmers Name', 'farmersname', 'name');
@@ -424,16 +433,24 @@ function renderBatch(batch, farmers) {
         <div class="val highlight">${village || '–'}</div>
       </div>
       <div class="info-card">
-        <div class="lbl">Harvest date</div>
-        <div class="val">${formatDate(harvest)}</div>
+        <div class="lbl">Harvest season</div>
+        <div class="val">${harvest || '–'}</div>
       </div>
       <div class="info-card">
-        <div class="lbl">Quantity</div>
-        <div class="val">${weight || '–'}</div>
+        <div class="lbl">Owner / Farmer</div>
+        <div class="val">${ownerName || '–'}</div>
       </div>
       <div class="info-card">
-        <div class="lbl">Cropping system</div>
-        <div class="val">Monocropping</div>
+        <div class="lbl">Post office</div>
+        <div class="val">${postOffice || '–'}</div>
+      </div>
+      <div class="info-card">
+        <div class="lbl">Tehsil · District</div>
+        <div class="val">${tehsil || '–'} · ${district || '–'}</div>
+      </div>
+      <div class="info-card">
+        <div class="lbl">State · Pin</div>
+        <div class="val">${state || '–'} · ${pincode || '–'}</div>
       </div>
     </div>
 
@@ -456,8 +473,8 @@ function renderBatch(batch, farmers) {
       <div class="timeline-row">
         <div class="t-dot done">✓</div>
         <div class="t-content">
-          <div class="t-label">Harvested · ${formatDate(harvest)}</div>
-          <div class="t-sub">Collected from ${village || 'village'} farms</div>
+          <div class="t-label">Harvested · ${harvest || 'Feb–Apr'}</div>
+          <div class="t-sub">Collected from ${village ? village.split(',')[0].trim() : 'village'} farms</div>
         </div>
       </div>
       <div class="timeline-row">
@@ -503,13 +520,13 @@ async function load() {
 
     // 3. Find this batch
     const batch = batches.find(b => {
-      const id = col(b, 'BatchID', 'batchid', 'batch_id', 'id');
+      const id = col(b, 'BATCHID', 'batchid', 'batch_id', 'id');
       return id.toLowerCase() === batchId.toLowerCase();
     });
 
     if (!batch) {
       showError(`Batch "${batchId}" not found`,
-        `This batch ID does not exist in the sheet.<br>Available: ${batches.map(b => col(b,'BatchID','batchid','id')).join(', ')}`);
+        `Available: ${batches.map(b => col(b,'BATCHID','batchid','id')).filter(Boolean).join(', ')}`);
       return;
     }
 
