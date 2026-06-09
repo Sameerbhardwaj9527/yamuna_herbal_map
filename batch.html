@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Batch Traceability – Aatmanirbhar Society</title>
+
+  <!-- Leaflet for GPS map -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Hindi&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+    :root {
+      --forest: #1a3a2a;
+      --leaf:   #2d6a4f;
+      --moss:   #52b788;
+      --sap:    #95d5b2;
+      --cream:  #f8f3e3;
+      --gold:   #d4a017;
+      --bark:   #6b4226;
+      --light:  #f0ede4;
+      --shadow: rgba(26,58,42,0.12);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--cream);
+      color: var(--forest);
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--forest);
+      padding: 16px 20px 14px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .logo { font-size: 28px; }
+    .header-text h1 {
+      font-family: 'Tiro Devanagari Hindi', serif;
+      font-size: 1rem;
+      color: var(--sap);
+      font-weight: 400;
+    }
+    .header-text p {
+      font-size: 0.72rem;
+      color: var(--sap);
+      opacity: 0.65;
+      margin-top: 2px;
+    }
+
+    /* ── Main container ── */
+    .container {
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 20px 16px 40px;
+    }
+
+    /* ── Loading / Error states ── */
+    .state-box {
+      text-align: center;
+      padding: 48px 20px;
+      color: #666;
+    }
+    .state-box .icon { font-size: 36px; margin-bottom: 12px; }
+    .state-box p { font-size: 0.9rem; line-height: 1.6; }
+    .state-box .detail { font-size: 0.78rem; color: #999; margin-top: 8px; }
+    .spinner {
+      width: 36px; height: 36px;
+      border: 3px solid var(--sap);
+      border-top-color: var(--leaf);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Batch card ── */
+    .verified-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--leaf);
+      color: white;
+      font-size: 0.72rem;
+      font-weight: 500;
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 14px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .batch-id-label {
+      font-size: 0.72rem;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 4px;
+    }
+    .batch-id-value {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--forest);
+      margin-bottom: 6px;
+      line-height: 1.2;
+    }
+    .product-name {
+      font-size: 1rem;
+      color: var(--leaf);
+      font-weight: 500;
+      margin-bottom: 20px;
+    }
+
+    /* ── Info cards ── */
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .info-card {
+      background: white;
+      border: 0.5px solid rgba(45,106,79,0.2);
+      border-radius: 10px;
+      padding: 12px 14px;
+    }
+    .info-card.full { grid-column: 1 / -1; }
+    .info-card .lbl {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: #999;
+      margin-bottom: 4px;
+    }
+    .info-card .val {
+      font-size: 0.92rem;
+      font-weight: 500;
+      color: var(--forest);
+      line-height: 1.3;
+    }
+    .info-card .val.highlight { color: var(--leaf); }
+
+    /* ── Farmer section ── */
+    .section-title {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #999;
+      margin: 18px 0 10px;
+    }
+
+    .farmer-card {
+      background: white;
+      border: 0.5px solid rgba(45,106,79,0.2);
+      border-radius: 10px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 10px;
+    }
+    .farmer-avatar {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      background: var(--sap);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+      color: var(--forest);
+      font-weight: 600;
+    }
+    .farmer-info .name {
+      font-weight: 500;
+      font-size: 0.92rem;
+      color: var(--forest);
+    }
+    .farmer-info .sub {
+      font-size: 0.78rem;
+      color: #888;
+      margin-top: 2px;
+    }
+
+    /* ── GPS Map ── */
+    #map {
+      height: 220px;
+      border-radius: 10px;
+      border: 0.5px solid rgba(45,106,79,0.2);
+      margin-bottom: 10px;
+      overflow: hidden;
+    }
+    .gps-coords {
+      font-size: 0.72rem;
+      color: #999;
+      text-align: center;
+      margin-bottom: 18px;
+      font-family: monospace;
+    }
+
+    /* ── Journey timeline ── */
+    .timeline {
+      background: white;
+      border: 0.5px solid rgba(45,106,79,0.2);
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+    .timeline-row {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      padding: 6px 0;
+      position: relative;
+    }
+    .timeline-row:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      left: 15px;
+      top: 30px;
+      bottom: -6px;
+      width: 1px;
+      background: var(--sap);
+    }
+    .t-dot {
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      background: var(--sap);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+    .t-dot.done { background: var(--leaf); color: white; }
+    .t-content .t-label {
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--forest);
+      line-height: 1.3;
+    }
+    .t-content .t-sub {
+      font-size: 0.72rem;
+      color: #999;
+      margin-top: 2px;
+    }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 20px 16px;
+      font-size: 0.72rem;
+      color: #aaa;
+      border-top: 0.5px solid rgba(45,106,79,0.1);
+    }
+    footer span { color: var(--leaf); }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🌿</div>
+  <div class="header-text">
+    <h1>Aatmanirbhar Society</h1>
+    <p>Farm-to-table traceability · Uttarakhand 2026</p>
+  </div>
+</header>
+
+<div class="container">
+  <div id="content">
+    <!-- Loading state -->
+    <div class="state-box" id="loading-state">
+      <div class="spinner"></div>
+      <p>Loading batch data…</p>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Verified by <span>Aatmanirbhar Society</span> · Uttarakhand, India · Data from Google Sheets
+</footer>
+
+<script>
+// ══════════════════════════════════════════════
+//  CONFIG
+// ══════════════════════════════════════════════
+const SHEET_ID   = '12t0_QTeoXZWpY9oc8SH8AzAYMbrLeiZ94r5Mt07sBgQ';
+const BATCH_TAB  = 'Batches';   // ← your new tab name
+const FARMER_TAB = 'Sheet1';    // ← farmer details tab
+
+// Column names in your Batches tab (must match exactly, case-insensitive)
+// Expected: BatchID | Product | FarmerName | Village | HarvestDate | GPS | Notes
+// ══════════════════════════════════════════════
+
+function csvUrl(tab) {
+  return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tab)}`;
+}
+
+function splitCSV(line) {
+  const out = []; let cur = ''; let inQ = false;
+  for (const c of line) {
+    if (c === '"') { inQ = !inQ; }
+    else if (c === ',' && !inQ) { out.push(cur.trim()); cur = ''; }
+    else cur += c;
+  }
+  out.push(cur.trim());
+  return out.map(v => v.replace(/^"|"$/g, '').trim());
+}
+
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  const headers = splitCSV(lines[0]).map(h => h.toLowerCase().replace(/\s+/g,''));
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const vals = splitCSV(lines[i]);
+    if (!vals[0]) continue;
+    const obj = {};
+    headers.forEach((h, idx) => { obj[h] = vals[idx] || ''; });
+    rows.push(obj);
+  }
+  return rows;
+}
+
+function col(row, ...keys) {
+  for (const k of keys) {
+    const v = row[k.toLowerCase().replace(/\s+/g,'')] || row[k.toLowerCase()];
+    if (v) return v;
+  }
+  return '';
+}
+
+function getInitials(name) {
+  return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+}
+
+function formatDate(raw) {
+  if (!raw) return '–';
+  const d = new Date(raw);
+  if (isNaN(d)) return raw;
+  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+function parseGPS(raw) {
+  if (!raw) return null;
+  const parts = raw.replace(/[°NnEe]/g, '').split(/[\s,]+/).map(Number).filter(n => !isNaN(n));
+  if (parts.length >= 2) return { lat: parts[0], lng: parts[1] };
+  return null;
+}
+
+function showError(title, detail) {
+  document.getElementById('content').innerHTML = `
+    <div class="state-box">
+      <div class="icon">⚠</div>
+      <p><strong>${title}</strong></p>
+      <p class="detail">${detail}</p>
+    </div>`;
+}
+
+function renderMap(gps) {
+  const mapEl = document.getElementById('map');
+  if (!mapEl || !gps) return;
+  const m = L.map('map', { zoomControl: true, attributionControl: false });
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(m);
+  m.setView([gps.lat, gps.lng], 15);
+  const icon = L.divIcon({
+    className: '',
+    html: `<div style="width:26px;height:26px;background:#2d6a4f;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3);"></div>`,
+    iconSize: [26,26], iconAnchor: [13,26],
+  });
+  L.marker([gps.lat, gps.lng], { icon }).addTo(m);
+}
+
+function renderBatch(batch, farmers) {
+  const gps      = parseGPS(col(batch, 'GPS', 'gps'));
+  const batchId  = col(batch, 'BatchID', 'batchid', 'batch_id', 'id');
+  const product  = col(batch, 'Product', 'product');
+  const village  = col(batch, 'Village', 'village');
+  const harvest  = col(batch, 'HarvestDate', 'harvestdate', 'harvest_date', 'date');
+  const notes    = col(batch, 'Notes', 'notes', 'qty', 'quantity');
+  const weight   = col(batch, 'Weight', 'weight', 'kg') || notes;
+
+  // Find matching farmers (same village or explicit farmer name)
+  const farmerName = col(batch, 'FarmerName', 'farmername', 'farmer');
+  const matchedFarmers = farmers.filter(f => {
+    const fName    = col(f, 'Farmers Name', 'farmersname', 'farmername', 'name');
+    const fVillage = col(f, 'Village', 'village');
+    if (farmerName && fName.toLowerCase().includes(farmerName.toLowerCase())) return true;
+    if (!farmerName && village && fVillage.toLowerCase() === village.toLowerCase()) return true;
+    return false;
+  }).slice(0, 6);  // max 6 farmers shown
+
+  const farmerCards = matchedFarmers.map(f => {
+    const name    = col(f, 'Farmers Name', 'farmersname', 'name');
+    const husband = col(f, 'Husband Name', 'husbandname', 'husband');
+    const area    = col(f, 'Area under cultivation', 'area', 'nali');
+    return `
+      <div class="farmer-card">
+        <div class="farmer-avatar">${getInitials(name)}</div>
+        <div class="farmer-info">
+          <div class="name">${name}</div>
+          <div class="sub">${husband ? 'W/O ' + husband + ' · ' : ''}${area ? area + ' nali' : ''}</div>
+        </div>
+      </div>`;
+  }).join('');
+
+  const mapSection = gps ? `
+    <p class="section-title">Farm location</p>
+    <div id="map"></div>
+    <p class="gps-coords">${gps.lat.toFixed(6)}° N, ${gps.lng.toFixed(6)}° E</p>
+  ` : '';
+
+  document.getElementById('content').innerHTML = `
+    <div class="verified-badge">✓ Verified batch</div>
+
+    <p class="batch-id-label">Batch ID</p>
+    <p class="batch-id-value">${batchId}</p>
+    <p class="product-name">${product}</p>
+
+    <div class="info-grid">
+      <div class="info-card">
+        <div class="lbl">Village</div>
+        <div class="val highlight">${village || '–'}</div>
+      </div>
+      <div class="info-card">
+        <div class="lbl">Harvest date</div>
+        <div class="val">${formatDate(harvest)}</div>
+      </div>
+      <div class="info-card">
+        <div class="lbl">Quantity</div>
+        <div class="val">${weight || '–'}</div>
+      </div>
+      <div class="info-card">
+        <div class="lbl">Cropping system</div>
+        <div class="val">Monocropping</div>
+      </div>
+    </div>
+
+    ${mapSection}
+
+    ${matchedFarmers.length > 0 ? `
+      <p class="section-title">Contributing farmers (${matchedFarmers.length})</p>
+      ${farmerCards}
+    ` : ''}
+
+    <p class="section-title">Batch journey</p>
+    <div class="timeline">
+      <div class="timeline-row">
+        <div class="t-dot done">✓</div>
+        <div class="t-content">
+          <div class="t-label">Planted</div>
+          <div class="t-sub">Hedychium / Buransh Squash seeds sown</div>
+        </div>
+      </div>
+      <div class="timeline-row">
+        <div class="t-dot done">✓</div>
+        <div class="t-content">
+          <div class="t-label">Harvested · ${formatDate(harvest)}</div>
+          <div class="t-sub">Collected from ${village || 'village'} farms</div>
+        </div>
+      </div>
+      <div class="timeline-row">
+        <div class="t-dot done">✓</div>
+        <div class="t-content">
+          <div class="t-label">Verified &amp; packed</div>
+          <div class="t-sub">Quality checked by Aatmanirbhar Society</div>
+        </div>
+      </div>
+      <div class="timeline-row">
+        <div class="t-dot">→</div>
+        <div class="t-content">
+          <div class="t-label">Dispatched to you</div>
+          <div class="t-sub">Direct from farmer collective</div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  if (gps) renderMap(gps);
+}
+
+async function load() {
+  // 1. Get batch ID from URL ?id=BATCH001
+  const params  = new URLSearchParams(window.location.search);
+  const batchId = params.get('id') || params.get('batch') || params.get('batchid');
+
+  if (!batchId) {
+    showError('No batch ID in URL',
+      'Scan a valid QR code, or add ?id=BATCH001 to the URL.<br>Example: batch.html?id=BATCH001');
+    return;
+  }
+
+  try {
+    // 2. Fetch both tabs in parallel
+    const [batchCSV, farmerCSV] = await Promise.all([
+      fetch(csvUrl(BATCH_TAB)).then(r => { if (!r.ok) throw new Error('Batches tab: ' + r.status); return r.text(); }),
+      fetch(csvUrl(FARMER_TAB)).then(r => r.ok ? r.text() : ''),
+    ]);
+
+    const batches = parseCSV(batchCSV);
+    const farmers = farmerCSV ? parseCSV(farmerCSV) : [];
+
+    // 3. Find this batch
+    const batch = batches.find(b => {
+      const id = col(b, 'BatchID', 'batchid', 'batch_id', 'id');
+      return id.toLowerCase() === batchId.toLowerCase();
+    });
+
+    if (!batch) {
+      showError(`Batch "${batchId}" not found`,
+        `This batch ID does not exist in the sheet.<br>Available: ${batches.map(b => col(b,'BatchID','batchid','id')).join(', ')}`);
+      return;
+    }
+
+    renderBatch(batch, farmers);
+
+  } catch (err) {
+    console.error(err);
+    showError('Could not load batch data',
+      'Make sure the Google Sheet is set to "Anyone with the link → Viewer".<br><small>' + err.message + '</small>');
+  }
+}
+
+load();
+</script>
+</body>
+</html>
