@@ -14,9 +14,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 #loading-overlay{
   position:fixed;inset:0;background:#fff;z-index:9999;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
-  transition:opacity .4s ease;
+  transition:opacity .5s ease;
 }
-#loading-overlay.fade-out{opacity:0;pointer-events:none}
+#loading-overlay.fade-out{opacity:0 !important;pointer-events:none !important}
+#loading-overlay.hidden{display:none !important}
 .loader-ring{
   width:48px;height:48px;border-radius:50%;
   border:4px solid #e8e4dc;border-top-color:#22c55e;
@@ -445,9 +446,8 @@ async function loadData(refresh=false){
   const overlay = document.getElementById('loading-overlay');
   const loadText = document.getElementById('loading-text');
   const loadSrc = document.getElementById('loading-source');
-  overlay.classList.remove('fade-out');
-  overlay.style.opacity='1';
-  overlay.style.pointerEvents='all';
+  overlay.classList.remove('fade-out','hidden');
+  overlay.style.cssText='';
 
   const btn = document.getElementById('refresh-btn');
   btn.classList.add('spinning');
@@ -522,10 +522,8 @@ async function loadData(refresh=false){
   }
 
   btn.classList.remove('spinning');
-  setTimeout(()=>{
-    overlay.classList.add('fade-out');
-    setTimeout(()=>{overlay.style.pointerEvents='none'},400);
-  },600);
+  overlay.classList.add('fade-out');
+  setTimeout(()=>overlay.classList.add('hidden'), 600);
 }
 
 // ── UPDATE STATS ──────────────────────────────────────────────────────────────
