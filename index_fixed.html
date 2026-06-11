@@ -594,14 +594,15 @@ const satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/servi
   attribution: '© Esri', maxZoom: 18
 });
 const baseMaps = { '🗺 Map': L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:18}), '🛰 Satellite': satellite };
-const overlayMaps = { '🏡 Polyhouses': polyhouseLayer };
-L.control.layers(baseMaps, overlayMaps, { position: 'topright' }).addTo(map);
 
 let clusterGroup = L.markerClusterGroup({ maxClusterRadius: 50, showCoverageOnHover: false });
 map.addLayer(clusterGroup);
 
 // Polyhouse layer — separate, always on top
 let polyhouseLayer = L.layerGroup().addTo(map);
+
+const overlayMaps = { '🏡 Polyhouses': polyhouseLayer };
+L.control.layers(baseMaps, overlayMaps, { position: 'topright' }).addTo(map);
 
 // ─── DATA ────────────────────────────────
 let allFarmers = [];
