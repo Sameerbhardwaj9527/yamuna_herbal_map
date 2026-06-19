@@ -18,7 +18,7 @@
 .marker-cluster span{line-height:30px}
 
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f8f3e3;color:#1a3a2a;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f8f3e3;color:#1a3a2a;height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
 
 /* HERO */
 #hero{position:relative;flex-shrink:0;height:116px;overflow:hidden;background:linear-gradient(135deg,#0d2119,#1a3a2a 60%,#2d5a3d)}
@@ -172,6 +172,112 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .fi-vill{font-size:.65rem;color:#888;margin-top:1px}
 .fi-tag{font-size:.6rem;background:#eff6ff;color:#1e40af;padding:1px 5px;border-radius:8px;margin-top:2px;display:inline-block}
 .fve{padding:18px;text-align:center;font-size:.8rem;color:#bbb}
+
+/* ── MOBILE RESPONSIVE OVERHAUL ─────────────────────── */
+
+/* Hero: compact on mobile */
+#hero{height:auto;min-height:72px;padding:8px 0}
+.hero-photos img{width:50%}
+.hero-content{padding:0 10px;gap:8px;flex-wrap:wrap}
+.logo-ring{width:40px;height:40px;font-size:20px}
+.hero-text h1{font-size:.95rem}
+.hero-text p{font-size:.58rem}
+.hero-deva{font-size:.78rem}
+.hero-stats{gap:5px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px;max-width:100%;scrollbar-width:none}
+.hero-stats::-webkit-scrollbar{display:none}
+.stat-chip{padding:4px 8px;min-width:52px;flex-shrink:0}
+.stat-chip .num{font-size:.9rem}
+.stat-chip .lbl{font-size:.5rem}
+
+/* Tab bar: scrollable */
+#tabbar{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:0 6px}
+#tabbar::-webkit-scrollbar{display:none}
+.tab-btn{padding:8px 10px;font-size:.72rem;white-space:nowrap;flex-shrink:0}
+
+/* Controls: wrap gracefully on mobile */
+.ctrl{gap:5px;padding:6px 8px}
+.ctrl label{font-size:.68rem}
+.ctrl select,.ctrl input{font-size:.72rem;padding:4px 6px;max-width:90px}
+.cnt-badge{font-size:.68rem;padding:2px 8px}
+
+/* Maps always fill their container */
+#map1,#map2,#map3{min-height:0;height:100%}
+
+/* Panel 2 (Altitude): full-width sidebar becomes overlay drawer on mobile */
+@media(max-width:640px){
+  #zsb{position:fixed;bottom:0;left:0;top:auto;width:100%;height:60vh;max-height:60vh;border-right:none;border-top:2px solid #e8e4dc;border-radius:12px 12px 0 0;transform:translateY(100%);z-index:2000;transition:transform .3s}
+  #zsb.open-mob{transform:translateY(0)}
+  #zsb.collapsed{transform:translateY(100%)}
+  #ztog{display:none}
+  #m2-mob-tog{display:flex}
+  #m2i{margin-left:0!important}
+  #m2i.full{margin-left:0}
+  #aleg{left:10px!important;bottom:56px}
+  #aleg.full{left:10px}
+  #zpop{bottom:auto;top:12px;right:10px;left:10px;width:auto}
+  .zsh{display:flex;justify-content:space-between;align-items:center}
+  #vlist{max-height:120px}
+
+  /* Panel 3 (Farmers): list becomes overlay drawer, closed by default */
+  #farm-wrap{position:relative}
+  #fsb{position:fixed;bottom:0;left:0;top:auto;width:100%;height:60vh;max-height:60vh;
+    border-right:none!important;border-top:2px solid #e8e4dc;border-radius:12px 12px 0 0;
+    transform:translateY(100%);z-index:2000;transition:transform .3s}
+  #fsb.open-mob{transform:translateY(0)}
+  #fsb-head{display:flex!important}
+  #f-mob-tog{display:flex}
+  #panel-farmers .map-legend{display:none}
+  
+  /* Farmer filter controls: 2-column grid */
+  #panel-farmers .ctrl{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+  #panel-farmers .ctrl .cnt-badge{grid-column:1/-1;text-align:center}
+  
+  /* Poly filter controls */
+  #panel-poly .ctrl{flex-wrap:wrap}
+  
+  /* Legend: smaller */
+  .map-legend{padding:7px 9px;font-size:.62rem;min-width:110px}
+  .map-legend h4{font-size:.55rem;margin-bottom:4px}
+  .lr{margin:3px 0;font-size:.62rem}
+  .ld{width:9px;height:9px}
+}
+
+/* Mobile toggle button for sidebar on altitude tab */
+#m2-mob-tog{
+  display:none;position:absolute;bottom:10px;right:10px;z-index:1000;
+  background:#fff;border:1px solid #e8e4dc;border-radius:8px;
+  padding:7px 12px;font-size:.74rem;font-weight:600;color:#2d6a4f;
+  cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.1);
+  align-items:center;gap:5px
+}
+#m2-mob-tog .mc{font-size:14px}
+#m2-mob-clz{display:none;position:absolute;top:10px;right:10px;z-index:2010;
+  background:none;border:none;font-size:16px;color:#999;cursor:pointer;padding:4px}
+@media(max-width:640px){#m2-mob-clz{display:block}}
+
+/* Mobile toggle button for sidebar on farmers tab */
+#f-mob-tog{
+  display:none;position:absolute;bottom:10px;right:10px;z-index:1000;
+  background:#fff;border:1px solid #e8e4dc;border-radius:8px;
+  padding:7px 12px;font-size:.74rem;font-weight:600;color:#2d6a4f;
+  cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.1);
+  align-items:center;gap:5px
+}
+#f-mob-tog .mc{font-size:14px}
+#fsb-head{display:none}
+#f-mob-clz{background:none;border:none;font-size:16px;color:#999;cursor:pointer;padding:4px}
+#f-mob-clz:hover{color:#666}
+
+/* Tablet: partial adjustments */
+@media(min-width:641px) and (max-width:900px){
+  #hero{height:auto;min-height:80px}
+  .hero-text h1{font-size:1rem}
+  .stat-chip .num{font-size:1rem}
+  #zsb{width:200px}
+  #m2i{margin-left:200px}
+  #aleg{left:210px}
+  #fsb{width:220px!important}
+}
 </style>
 </head>
 <body>
@@ -250,6 +356,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 <div class="panel" id="panel-alt">
   <div id="zsb">
     <button id="ztog" onclick="toggleSB()">◀</button>
+    <button id="m2-mob-clz" onclick="toggleSBMob()">✕</button>
     <div class="zsh">
       <h3>Altitude &amp; Zone Map</h3>
       <p>Yamuna Valley · Uttarkashi</p>
@@ -270,6 +377,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
     </div>
   </div>
   <div id="m2i">
+    <button id="m2-mob-tog" onclick="toggleSBMob()"><span class="mc">🏔️</span> Villages</button>
     <div id="map2"></div>
     <div id="zpop">
       <button class="zpc" onclick="closePop()">✕</button>
@@ -309,14 +417,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
     <input id="ffsearch" type="text" placeholder="Name…" style="width:120px"/>
     <span class="cnt-badge" id="fshown">– shown</span>
   </div>
-  <div style="display:flex;flex:1;overflow:hidden;min-height:0">
+  <div id="farm-wrap" style="display:flex;flex:1;overflow:hidden;min-height:0">
     <!-- Farmer list sidebar -->
     <div id="fsb" style="width:300px;flex-shrink:0;display:flex;flex-direction:column;border-right:1px solid #e8e4dc;overflow:hidden">
+      <div id="fsb-head" style="display:none;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid #f0ede8;flex-shrink:0">
+        <span style="font-size:.78rem;font-weight:600;color:#2d6a4f">👩‍🌾 Farmers List</span>
+        <button id="f-mob-clz" onclick="toggleFsbMob()" aria-label="Close list">✕</button>
+      </div>
       <div id="flist" style="flex:1;overflow-y:auto;font-size:.73rem"></div>
     </div>
     <!-- Farmer map -->
     <div style="flex:1;position:relative">
       <div id="map3" style="width:100%;height:100%"></div>
+      <button id="f-mob-tog" onclick="toggleFsbMob()"><span class="mc">👩‍🌾</span> Farmers</button>
       <div class="map-legend" style="bottom:18px;font-size:.65rem">
         <h4>Villages</h4>
         <div class="lr"><div class="ld" style="background:#7c3aed"></div>Kharsali (96)</div>
@@ -392,9 +505,9 @@ function switchTab(t){
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('panel-'+t).classList.add('active');
   document.getElementById('tab-'+t).classList.add('active');
-  if(t==='poly'&&!m1ok){initMap1();m1ok=true;}
-  if(t==='alt'){if(!m2ok){initMap2();m2ok=true;}else setTimeout(()=>map2.invalidateSize(),50);}
-  if(t==='farmers'){if(!m3ok){initMap3();m3ok=true;}else setTimeout(()=>{if(map3)map3.invalidateSize();},50);}
+  if(t==='poly'){if(!m1ok){initMap1();m1ok=true;}else setTimeout(()=>map1&&map1.invalidateSize(),80);}
+  if(t==='alt'){if(!m2ok){initMap2();m2ok=true;}else setTimeout(()=>map2&&map2.invalidateSize(),80);}
+  if(t==='farmers'){if(!m3ok){initMap3();m3ok=true;}else setTimeout(()=>{if(map3)map3.invalidateSize();},80);}
 }
 
 // ── MAP 1 ─────────────────────────────────────────
@@ -553,6 +666,18 @@ function selVil(i){
 }
 function setAct(i,on){const el=mrks[i]?.getElement()?.querySelector('.mpn');if(el) el.classList.toggle('apn',on);}
 function closePop(){document.getElementById('zpop').classList.remove('on');if(avilI!==null)setAct(avilI,false);avilI=null;buildList(filtered());}
+function toggleSBMob(){
+  const zsb=document.getElementById('zsb');
+  const isMob=window.innerWidth<=640;
+  if(isMob){
+    zsb.classList.toggle('open-mob');
+    if(zsb.classList.contains('open-mob')) zsb.classList.remove('collapsed');
+    else zsb.classList.add('collapsed');
+  } else {
+    toggleSB();
+  }
+  setTimeout(()=>map2&&map2.invalidateSize(),310);
+}
 function toggleSB(){sbOpen=!sbOpen;
   document.getElementById('zsb').classList.toggle('collapsed',!sbOpen);
   document.getElementById('m2i').classList.toggle('full',!sbOpen);
@@ -561,12 +686,18 @@ function toggleSB(){sbOpen=!sbOpen;
   setTimeout(()=>map2.invalidateSize(),310);
 }
 
+function toggleFsbMob(){
+  const fsb=document.getElementById('fsb');
+  fsb.classList.toggle('open-mob');
+  setTimeout(()=>map3&&map3.invalidateSize(),310);
+}
+
 
 
 // ── MAP 3: FARMERS DIRECTORY ─────────────────────
 let map3, fmCL, FDATA=[], activeFarmerI=null;
-const FSHEET_ID='1H5u6_8t3AEKRN2esper6WUrD-qZPajSj';
-const FSHEET_GID='0'; // Sheet1
+const FSHEET_ID='12t0_QTeoXZWpY9oc8SH8AzAYMbrLeiZ94r5Mt07sBgQ';
+const FSHEET_GID='0'; // Sheet1 of provided spreadsheet
 
 // Village → approximate lat/lng (Uttarkashi district)
 const VIL_COORDS={
@@ -1737,6 +1868,17 @@ window.addEventListener('load',()=>{
     if(map1){map1.invalidateSize();try{const cl2=map1._layers;map1.invalidateSize();}catch(e){}}
   },300);
 });
+// Keep maps sized correctly on rotate/resize (mobile address-bar changes too)
+let _rzT;
+window.addEventListener('resize',()=>{
+  clearTimeout(_rzT);
+  _rzT=setTimeout(()=>{
+    if(map1)map1.invalidateSize();
+    if(map2)map2.invalidateSize();
+    if(map3)map3.invalidateSize();
+  },200);
+});
+
 </script>
 </body>
 </html>
